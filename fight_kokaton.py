@@ -140,13 +140,32 @@ class Bomb:
         self.rct.move_ip(self.vx, self.vy)
         screen.blit(self.img, self.rct)
 
+class Explosion:
+    """
+    爆発エフェクトクラス
+    """
+    def __init__(self, bomb):
+        img = pg.image.load("fig/explosion.gif")
+        self.imgs = [
+            img,
+            pg.transform.flip(img, True, True)
+        ]
+        self.rct = self.imgs[0].get_rect()
+        self.rct.center = bomb.rct.center
+        self.life = 10
+
+    def update(self, screen):
+        self.life -= 1
+        if self.life > 0:
+            screen.blit(self.imgs[self.life % 2], self.rct)
+
 class Score:
     """スコアを表示するクラス"""
 
     def __init__(self):
         self.score = 0
         self.font = pg.font.Font(None, 50)
-        self.img = self.fonto.render(
+        self.img = self.font.render(
             "Score: 0", 0, (0, 0, 255)
         )
         self.rct = self.img.get_rect()
@@ -156,11 +175,12 @@ class Score:
         self.score += 1
 
     def update(self, screen):
-        score_img = self.font.render(
-            f"Score: {self.score}", True, (255, 255, 255)
+        self.img = self.font.render(
+            f"Score: {self.score}", 0, (0, 0, 255)
         )
         self.rct = self.img.get_rect()
         self.rct.center = (100, HEIGHT - 50)
+        
         screen.blit(self.img, self.rct)
 
 def main():
@@ -171,6 +191,7 @@ def main():
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     beams = []  # ゲーム初期化時にはビームは存在しない
     score = Score()
+    explosions = []
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -186,34 +207,32 @@ def main():
         for beam in beams[:]:
             for i, bomb in enumerate(bombs):
                 if bomb is not None and beam.rct.colliderect(bomb.rct):
+                    explosions.append(Explosion(bomb))
                     beams.remove(beam)
                     bombs[i] = None
                     score.add_score()
                     bird.change_img(6, screen)
                     break        
 
-        for i, bomb in enumerate(bombs):
-            if bomb is not None:
-                    if bird.rct.colliderect(bomb.rct):
-                        bird.change_img(8, screen)
 
-                # こうかとんと爆弾の衝突判定
-            if bombs[i] is not None:
-                    if bird.rct.colliderect(bomb.rct):
-                        bird.change_img(8, screen)
 
-                        fonto = pg.font.Font(None, 80)
-                        txt = fonto.render(
+            # こうかとんと爆弾の衝突判定
+        for bomb in bombs:    
+            if bomb is not None and bird.rct.colliderect(bomb.rct):
+                bird.change_img(8, screen)
+
+                font = pg.font.Font(None, 80)
+                txt = font.render(
                             "Game Over", True, (255, 0, 0)
                         )
-                        screen.blit(
+                screen.blit(
                             txt,
                             [WIDTH // 2 - 150, HEIGHT // 2]
                         )
 
-                        pg.display.update()
-                        time.sleep(1)
-                        return
+                pg.display.update()
+                time.sleep(1)
+                return
 
         # 消えた爆弾をリストから除外
         bombs = [bomb for bomb in bombs if bomb is not None]
@@ -229,6 +248,14 @@ def main():
 
         for bomb in bombs:
             bomb.update(screen)
+
+        for explosion in explosions:
+            explosion.update(screen)
+
+        explosions = [
+            explosion for explosion in explosions
+            if explosion.life > 0
+        ]
 
         score.update(screen)
             
