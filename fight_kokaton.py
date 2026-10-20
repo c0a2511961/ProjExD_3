@@ -2,6 +2,7 @@ import os
 import random
 import sys
 import time
+import math
 import pygame as pg
 
 
@@ -23,8 +24,6 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
         tate = False
     return yoko, tate
-
-
 class Bird:
     """
     ゲームキャラクター（こうかとん）に関するクラス
@@ -57,6 +56,8 @@ class Bird:
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
 
+        self.dire = (+5, 0) #こうかとんの向き
+
     def change_img(self, num: int, screen: pg.Surface):
         """
         こうかとん画像を切り替え，画面に転送する
@@ -77,7 +78,24 @@ class Bird:
             if key_lst[k]:
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
+
+            if sum_mv != [0, 0]:
+                self.dire = tuple(sum_mv)
+
+        self.rct.move_ip(sum_mv) #移動しているときに向きを記録
+        if sum_mv != [0, 0]:
+            self.dire = tuple(sum_mv)
+
         self.rct.move_ip(sum_mv)
+
+        if check_bound(self.rct) != (True, True):
+            self.rct.move_ip(-sum_mv[0], -sum_mv[1])
+
+        if sum_mv != [0, 0]:
+            self.img = __class__.imgs[tuple(sum_mv)]
+
+        screen.blit(self.img, self.rct)
+
         if check_bound(self.rct) != (True, True):
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
@@ -89,16 +107,28 @@ class Beam:
     """
     こうかとんが放つビームに関するクラス
     """
-    def __init__(self, bird:"Bird"):
+    def __init__(self, bird: "Bird"):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん（Birdインスタンス）
         """
-        self.img = pg.image.load(f"fig/beam.png")
+        # こうかとんの向きをビームの速度にする
+        self.vx, self.vy = bird.dire
+
+        # ビーム画像を読み込む
+        img = pg.image.load("fig/beam.png")
+
+        # 進行方向に合わせてビーム画像を回転させる
+        angle = math.degrees(math.atan2(-self.vy, self.vx))
+        self.img = pg.transform.rotozoom(img, angle, 1.0)
+
         self.rct = self.img.get_rect()
-        self.rct.centery = bird.rct.centery
-        self.rct.left = bird.rct.right
-        self.vx, self.vy = +5, 0
+
+        # こうかとんの向いている方向にビームを配置する
+        self.rct.center = (
+            bird.rct.centerx + bird.rct.width * self.vx / 5,
+            bird.rct.centery + bird.rct.height * self.vy / 5
+        )
 
     def update(self, screen: pg.Surface):
         """
@@ -204,17 +234,23 @@ def main():
 
         screen.blit(bg_img, [0, 0])
 
-        for beam in beams[:]:
-            for i, bomb in enumerate(bombs):
+        for i, beam in enumerate(beams):
+            if beam is None:
+                continue
+
+            for j, bomb in enumerate(bombs):
                 if bomb is not None and beam.rct.colliderect(bomb.rct):
                     explosions.append(Explosion(bomb))
-                    beams.remove(beam)
-                    bombs[i] = None
+                    beams[i] = None
+                    bombs[j] = None
                     score.add_score()
                     bird.change_img(6, screen)
-                    break        
+                    break
 
-
+            beams = [
+                beam for beam in beams
+                if beam is not None
+            ]
 
             # こうかとんと爆弾の衝突判定
         for bomb in bombs:    
