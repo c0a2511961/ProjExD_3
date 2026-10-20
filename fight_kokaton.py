@@ -146,7 +146,7 @@ class Score:
     def __init__(self):
         self.score = 0
         self.font = pg.font.Font(None, 50)
-        self.img = self.fonto.render(
+        self.img = self.font.render(
             "Score: 0", 0, (0, 0, 255)
         )
         self.rct = self.img.get_rect()
@@ -202,8 +202,8 @@ def main():
                     if bird.rct.colliderect(bomb.rct):
                         bird.change_img(8, screen)
 
-                        fonto = pg.font.Font(None, 80)
-                        txt = fonto.render(
+                        font = pg.font.Font(None, 80)
+                        txt = font.render(
                             "Game Over", True, (255, 0, 0)
                         )
                         screen.blit(
