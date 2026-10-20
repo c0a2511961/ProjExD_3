@@ -140,6 +140,21 @@ class Bomb:
         self.rct.move_ip(self.vx, self.vy)
         screen.blit(self.img, self.rct)
 
+class Score:
+    """スコアを表示するクラス"""
+
+    def __init__(self):
+        self.score = 0
+        self.font = pg.font.Font(None, 40)
+
+    def add_score(self):
+        self.score += 1
+
+    def update(self, screen):
+        score_img = self.font.render(
+            f"Score: {self.score}", True, (255, 255, 255)
+        )
+        screen.blit(score_img, (10, 10))
 
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
@@ -148,6 +163,7 @@ def main():
     bird = Bird((300, 200))
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     beam = None  # ゲーム初期化時にはビームは存在しない
+    score = Score()
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -159,12 +175,7 @@ def main():
                 beam = Beam(bird)            
         screen.blit(bg_img, [0, 0])
 
-        for i, bomb in enumerate(bombs):
-            if bomb is not None and beam is not None:
-                if beam.rct.colliderect(bomb.rct):
-                    beam = None
-                    bombs[i] = None
-                    bird.change_img(6, screen)
+        
 
         for i, bomb in enumerate(bombs):
             if bomb is not None:
@@ -173,6 +184,9 @@ def main():
                     if beam.rct.colliderect(bomb.rct):
                         beam = None
                         bombs[i] = None
+
+                        score.add_score()
+
                         bird.change_img(6, screen)
 
                 # こうかとんと爆弾の衝突判定
@@ -204,6 +218,8 @@ def main():
 
         for bomb in bombs:
             bomb.update(screen)
+
+        score.update(screen)
             
         pg.display.update()
         tmr += 1
