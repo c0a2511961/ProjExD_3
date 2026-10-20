@@ -145,7 +145,12 @@ class Score:
 
     def __init__(self):
         self.score = 0
-        self.font = pg.font.Font(None, 40)
+        self.font = pg.font.Font(None, 50)
+        self.img = self.fonto.render(
+            "Score: 0", 0, (0, 0, 255)
+        )
+        self.rct = self.img.get_rect()
+        self.rct.center = (100, HEIGHT - 50)
 
     def add_score(self):
         self.score += 1
@@ -154,7 +159,9 @@ class Score:
         score_img = self.font.render(
             f"Score: {self.score}", True, (255, 255, 255)
         )
-        screen.blit(score_img, (10, 10))
+        self.rct = self.img.get_rect()
+        self.rct.center = (100, HEIGHT - 50)
+        screen.blit(self.img, self.rct)
 
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
